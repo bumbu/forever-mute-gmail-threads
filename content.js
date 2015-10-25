@@ -14,7 +14,7 @@ InboxSDK.load('1', 'SDK_ID').then(function(sdk){
 
       thread.addLabel({
         title: 'Muting...',
-        iconUrl: chrome.extension.getURL('images/mute.png'),
+        // iconUrl: chrome.extension.getURL('images/mute.png'),
       })
     }
 
