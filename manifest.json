@@ -1,0 +1,23 @@
+{
+  "name": "True GMail Mute",
+  "description": "Muting labeled threads in GMail",
+  "version": "0.1",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://inbox.google.com/*"
+      ],
+      "js": ["inboxsdk.js","content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "permissions": [
+    "https://mail.google.com/",
+    "https://inbox.google.com/"
+  ],
+  "web_accessible_resources": [
+    "images/mute.png"
+  ],
+  "manifest_version": 2
+}
