@@ -41,8 +41,6 @@ function authorize(){
 }
 
 function gmailAPILoaded(){
-    //do stuff here
-  console.log('gmail.api loaded')
   // Check for Mute label. If it doesn't exist, then create one
   checkForMuteLabel()
   	.then(function(data) {
@@ -53,14 +51,53 @@ function gmailAPILoaded(){
   	})
 }
 
+var muteLabelId = null;
+var muteLabelTitle = 'M';
+var muteThreadsQueue = [];
+
+/*************************
+ Communication channel
+ *************************/
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+	if (request.origin !== 'content') return false;
+
+	if (!muteLabelId) {
+		sendResponse({success: false, message: 'mutedLabelId not yet available'});
+		return;
+	}
+
+	if (request.action === 'mute') {
+		onMessageMute(request, sender)
+	}
+
+	sendResponse({success: true, message: 'Started working...'});
+});
+
+function onMessageMute(request, sender) {
+	if (request.threadIds && request.threadIds.length) {
+		for (var threadId of request.threadIds) {
+			muteThreadsQueue.push({
+				threadId: threadId,
+				tabId: sender.tab.id
+			})
+		}
+
+		// Start setting labels only if there is no similar ongoing job
+		if (muteThreadsQueue.length >= request.threadIds.length) {
+			setMuteLabelToThreads();
+		}
+	}
+}
+
 /*************************
  After authentication
  *************************/
 
-var muteLabelId = null;
-var muteLabelTitle = 'TMute'
-
-// returns: Promise
+// Checks if Mute label exists
+// If muted label doesn't exist - delegates its creation to `createMuteLabel`
+//
+// @return {Promise}
 function checkForMuteLabel() {
 	return new Promise(function(resolve, reject) {
 		gapi.client.gmail.users.labels.list({userId: 'me'})
@@ -94,6 +131,9 @@ function checkForMuteLabel() {
 	})
 }
 
+// Creates Mute label
+//
+// @return {Promise}
 function createMuteLabel() {
 	return new Promise(function(resolve, reject) {
 		gapi.client.gmail.users.labels.create({
@@ -109,4 +149,31 @@ function createMuteLabel() {
 				reject(Error('Error creating Mute label'))
 			})
 	})
+}
+
+// Set Mute label to given threads
+//
+// @return {Promise}
+function setMuteLabelToThreads() {
+	if (!muteThreadsQueue.length) return false; // In case that there are no more threads to process
+	var thread = muteThreadsQueue.shift()
+		, threadId = thread.threadId
+		, tabId = thread.tabId
+		;
+
+	chrome.runtime.sendMessage({action: 'start', success: true, threadId: threadId, origin: 'bg'})
+
+	gapi.client.gmail.users.threads.modify({
+		userId: 'me',
+		id: threadId,
+		addLabelIds: [muteLabelId],
+		removeLabelIds: ['UNREAD']
+	})
+		.then(function() {
+			chrome.tabs.sendMessage(tabId, {action: 'mute', success: true, threadId: threadId, origin: 'bg'})
+			setMuteLabelToThreads() // next thread
+		}, function() {
+			chrome.tabs.sendMessage(tabId, {action: 'mute', success: false, threadId: threadId, origin: 'bg'})
+			setMuteLabelToThreads() // next thread
+		})
 }

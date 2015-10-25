@@ -4,17 +4,23 @@ InboxSDK.load('1', 'SDK_ID').then(function(sdk){
   }
 
   function bulkMute(ev) {
-    var thread;
+    var thread,
+      threadIds = []
+      ;
 
     for (var i = 0; i < ev.selectedThreadRowViews.length; i++) {
       thread = ev.selectedThreadRowViews[i];
+      threadIds.push(thread.getThreadID());
+
       thread.addLabel({
-        title: 'Muted',
+        title: 'Muting...',
         iconUrl: chrome.extension.getURL('images/mute.png'),
       })
     }
-    console.log(event)
-    console.log('Should mute threads');
+
+    chrome.runtime.sendMessage({action: 'mute', threadIds: threadIds, origin: 'content'}, function(response) {
+      console.log(response);
+    });
   }
 
   sdk.Toolbars.registerToolbarButtonForList({
@@ -25,6 +31,22 @@ InboxSDK.load('1', 'SDK_ID').then(function(sdk){
     hasDropdown: false,
     // hideFor: whenNoneSelected,
     keyboardShortcutHandle: null
+  });
+
+  // console.log(sdk.User.getEmailAddress)
+
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
+    if (request.origin !== 'bg') return false;
+
+    if (request.action === 'mute') {
+      if (request.success) {
+        console.log('Successfuly muted', request.threadId)
+      } else {
+        console.log('Unsuccessfuly muted', request.threadId)
+      }
+    }
+
+    sendResponse()
   });
 
 });
