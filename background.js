@@ -41,14 +41,15 @@ function authorize(){
 }
 
 function gmailAPILoaded(){
-  // Check for Mute label. If it doesn't exist, then create one
-  checkForMuteLabel()
-  	.then(function(data) {
-  		console.log('Label id', data)
-  	})
-  	.catch(function(err) {
-  		console.log('Error', err)
-  	})
+	// Check for Mute label. If it doesn't exist, then create one
+	checkForMuteLabel()
+		.then(function(data) {
+			console.log('Mute label id:', data)
+		})
+		.then(readMessagesNow)
+		.catch(function(err) {
+			console.log('GMail API Loaded Error', err)
+		})
 }
 
 var muteLabelId = null;
@@ -85,13 +86,15 @@ function onMessageMute(request, sender) {
 
 		// Start setting labels only if there is no similar ongoing job
 		if (muteThreadsQueue.length >= request.threadIds.length) {
-			setMuteLabelToThreads();
+			setMuteLabelToThreads()
+			readMessagesNow()
 		}
 	}
 }
 
+
 /*************************
- After authentication
+ Label check and creation
  *************************/
 
 // Checks if Mute label exists
@@ -151,6 +154,11 @@ function createMuteLabel() {
 	})
 }
 
+
+/*************************
+ Mark threads as muted
+ *************************/
+
 // Set Mute label to given threads
 //
 // @return {Promise}
@@ -176,4 +184,120 @@ function setMuteLabelToThreads() {
 			chrome.tabs.sendMessage(tabId, {action: 'mute', success: false, threadId: threadId, origin: 'bg'})
 			setMuteLabelToThreads() // next thread
 		})
+}
+
+
+/*************************
+ Read muted threads
+ *************************/
+
+var readingMutedThreads = false;
+var lastReadTimeout = null;
+
+function updateMutedAndUnreadThreads() {
+	return getMutedAndUnreadThreads()
+		.then(readThreads)
+		.then(function(failedUpdatesCount) {
+			console.log('Threads updated.', failedUpdatesCount, 'threads failed to update.')
+
+			createCheckTimer()
+		})
+		.catch(function(err) {
+			console.log('err', err)
+
+			createCheckTimer()
+		})
+}
+
+// @return {Promise}
+function getMutedAndUnreadThreads() {
+	return new Promise(function(resolve, reject) {
+		var threadIds = []
+			, pageToken = null
+			;
+
+		function loadThreads() {
+			gapi.client.gmail.users.threads.list({
+				pageToken: pageToken,
+				userId: 'me',
+				q: 'label:M is:unread'
+			})
+				.then(function(data) {
+					// Add threads ids
+					if (data.result.threads) {
+						for (var thread of data.result.threads) {
+							threadIds.push(thread.id)
+						}
+					}
+
+					if (data.result.nextPageToken) {
+						pageToken = data.result.nextPageToken;
+						// Go recursive
+						loadThreads();
+					} else {
+						resolve(threadIds);
+					}
+				}, function() {
+					reject(Error('Error while retrieving threads list'))
+				})
+		}
+
+		loadThreads();
+	})
+}
+
+// @return {Promise}
+function readThreads(threadIds) {
+	return new Promise(function(resolve, reject) {
+		var localThreadIds = threadIds.slice()
+			, failedUpdatesCount = 0
+			;
+
+		function readFirstThread() {
+			// Resolve if no more threads
+			if (!localThreadIds.length) {
+				resolve(failedUpdatesCount)
+				return
+			}
+
+			var threadId = localThreadIds.shift();
+
+			gapi.client.gmail.users.threads.modify({
+				userId: 'me',
+				id: threadId,
+				removeLabelIds: ['UNREAD']
+			})
+				.then(function() {
+					readFirstThread()
+				}, function() {
+					console.log('Error. Was not able to mark thread', threadId, 'as read')
+					readFirstThread()
+				})
+		}
+
+		readFirstThread()
+	})
+}
+
+/*************************
+ Create check timer
+ *************************/
+
+// @return {Promise}
+function createCheckTimer() {
+	// Erase previous timer
+	lastReadTimeout && clearTimeout(lastReadTimeout)
+
+	lastReadTimeout = setTimeout(function() {
+		updateMutedAndUnreadThreads()
+	}, 5 * 60 * 1000) // 5 minutes
+
+	return Promise.resolve();
+}
+
+// @return {Promise}
+function readMessagesNow() {
+	// Erase previous timer
+	lastReadTimeout && clearTimeout(lastReadTimeout)
+	return updateMutedAndUnreadThreads()
 }
