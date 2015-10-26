@@ -3,7 +3,7 @@ chrome.identity.getAuthToken(
 	{'interactive': true},
 	function(){
 	  //load Google's javascript client libraries
-		window.gapi_onload = authorize;
+		window.gapi_onload = function() {authorize().then(gmailAPILoaded)};
 		loadScript('https://apis.google.com/js/client.js');
 	}
 );
@@ -28,16 +28,15 @@ function loadScript(url){
 }
 
 function authorize(){
-  gapi.auth.authorize(
-		{
+	return new Promise(function(resolve, reject) {
+	  gapi.auth.authorize({
 			client_id: 'GMAIL_API_KEY',
 			immediate: true,
 			scope: 'https://mail.google.com/ https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.labels'
-		},
-		function(){
-		  gapi.client.load('gmail', 'v1', gmailAPILoaded);
-		}
-	);
+		}, function(){
+		  gapi.client.load('gmail', 'v1', resolve);
+		});
+	})
 }
 
 function gmailAPILoaded(){
@@ -86,8 +85,9 @@ function onMessageMute(request, sender) {
 
 		// Start setting labels only if there is no similar ongoing job
 		if (muteThreadsQueue.length >= request.threadIds.length) {
-			setMuteLabelToThreads()
-			readMessagesNow()
+			authorize()
+				.then(setMuteLabelToThreads)
+				.then(readMessagesNow)
 		}
 	}
 }
@@ -195,7 +195,8 @@ var readingMutedThreads = false;
 var lastReadTimeout = null;
 
 function updateMutedAndUnreadThreads() {
-	return getMutedAndUnreadThreads()
+	return authorize()
+		.then(getMutedAndUnreadThreads)
 		.then(readThreads)
 		.then(function(failedUpdatesCount) {
 			console.log('Threads updated.', failedUpdatesCount, 'threads failed to update.')
