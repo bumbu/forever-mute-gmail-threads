@@ -221,7 +221,7 @@ function getMutedAndUnreadThreads() {
 			gapi.client.gmail.users.threads.list({
 				pageToken: pageToken,
 				userId: 'me',
-				q: 'label:M is:unread'
+				labelIds: ['UNREAD', muteLabelId]
 			})
 				.then(function(data) {
 					// Add threads ids
