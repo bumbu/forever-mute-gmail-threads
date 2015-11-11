@@ -199,7 +199,7 @@ function updateMutedAndUnreadThreads() {
 		.then(getMutedAndUnreadThreads)
 		.then(readThreads)
 		.then(function(failedUpdatesCount) {
-			console.log('Threads updated.', failedUpdatesCount, 'threads failed to update.')
+			console.log(new Date(), 'Threads updated.', failedUpdatesCount, 'threads failed to update.')
 
 			createCheckTimer()
 		})
