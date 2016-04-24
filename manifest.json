@@ -1,5 +1,5 @@
 {
-  "name": "True GMail Mute",
+  "name": "Forever Mute GMail Threads",
   "description": "Muting labeled threads in GMail",
   "version": "0.2",
   "content_scripts": [
