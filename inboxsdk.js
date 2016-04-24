@@ -734,37 +734,37 @@ var _Promise = require("babel-runtime/core-js/promise")["default"];
 typeof global === "object" ? global : typeof window === "object" ? window : typeof self === "object" ? self : undefined);
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"_process":121,"babel-runtime/core-js/object/create":3,"babel-runtime/core-js/promise":4,"babel-runtime/core-js/symbol":5,"babel-runtime/core-js/symbol/iterator":6}],13:[function(require,module,exports){
+},{"_process":120,"babel-runtime/core-js/object/create":3,"babel-runtime/core-js/promise":4,"babel-runtime/core-js/symbol":5,"babel-runtime/core-js/symbol/iterator":6}],13:[function(require,module,exports){
 require('../../modules/es6.string.iterator');
 require('../../modules/es6.array.from');
 module.exports = require('../../modules/$.core').Array.from;
-},{"../../modules/$.core":28,"../../modules/es6.array.from":75,"../../modules/es6.string.iterator":80}],14:[function(require,module,exports){
+},{"../../modules/$.core":28,"../../modules/es6.array.from":76,"../../modules/es6.string.iterator":81}],14:[function(require,module,exports){
 require('../../modules/es6.object.assign');
 module.exports = require('../../modules/$.core').Object.assign;
-},{"../../modules/$.core":28,"../../modules/es6.object.assign":77}],15:[function(require,module,exports){
+},{"../../modules/$.core":28,"../../modules/es6.object.assign":78}],15:[function(require,module,exports){
 var $ = require('../../modules/$');
 module.exports = function create(P, D){
   return $.create(P, D);
 };
-},{"../../modules/$":51}],16:[function(require,module,exports){
+},{"../../modules/$":52}],16:[function(require,module,exports){
 require('../modules/es6.object.to-string');
 require('../modules/es6.string.iterator');
 require('../modules/web.dom.iterable');
 require('../modules/es6.promise');
 module.exports = require('../modules/$.core').Promise;
-},{"../modules/$.core":28,"../modules/es6.object.to-string":78,"../modules/es6.promise":79,"../modules/es6.string.iterator":80,"../modules/web.dom.iterable":83}],17:[function(require,module,exports){
+},{"../modules/$.core":28,"../modules/es6.object.to-string":79,"../modules/es6.promise":80,"../modules/es6.string.iterator":81,"../modules/web.dom.iterable":84}],17:[function(require,module,exports){
 require('../../modules/es6.symbol');
 module.exports = require('../../modules/$.core').Symbol;
-},{"../../modules/$.core":28,"../../modules/es6.symbol":81}],18:[function(require,module,exports){
+},{"../../modules/$.core":28,"../../modules/es6.symbol":82}],18:[function(require,module,exports){
 require('../../modules/es6.string.iterator');
 require('../../modules/web.dom.iterable');
 module.exports = require('../../modules/$.wks')('iterator');
-},{"../../modules/$.wks":73,"../../modules/es6.string.iterator":80,"../../modules/web.dom.iterable":83}],19:[function(require,module,exports){
+},{"../../modules/$.wks":74,"../../modules/es6.string.iterator":81,"../../modules/web.dom.iterable":84}],19:[function(require,module,exports){
 require('../modules/es6.object.to-string');
 require('../modules/web.dom.iterable');
 require('../modules/es6.weak-set');
 module.exports = require('../modules/$.core').WeakSet;
-},{"../modules/$.core":28,"../modules/es6.object.to-string":78,"../modules/es6.weak-set":82,"../modules/web.dom.iterable":83}],20:[function(require,module,exports){
+},{"../modules/$.core":28,"../modules/es6.object.to-string":79,"../modules/es6.weak-set":83,"../modules/web.dom.iterable":84}],20:[function(require,module,exports){
 module.exports = function(it){
   if(typeof it != 'function')throw TypeError(it + ' is not a function!');
   return it;
@@ -775,7 +775,7 @@ module.exports = function(it){
   if(!isObject(it))throw TypeError(it + ' is not an object!');
   return it;
 };
-},{"./$.is-object":44}],22:[function(require,module,exports){
+},{"./$.is-object":45}],22:[function(require,module,exports){
 // 0 -> Array#forEach
 // 1 -> Array#map
 // 2 -> Array#filter
@@ -784,9 +784,20 @@ module.exports = function(it){
 // 5 -> Array#find
 // 6 -> Array#findIndex
 var ctx      = require('./$.ctx')
+  , isObject = require('./$.is-object')
   , IObject  = require('./$.iobject')
   , toObject = require('./$.to-object')
-  , toLength = require('./$.to-length');
+  , toLength = require('./$.to-length')
+  , isArray  = require('./$.is-array')
+  , SPECIES  = require('./$.wks')('species');
+// 9.4.2.3 ArraySpeciesCreate(originalArray, length)
+var ASC = function(original, length){
+  var C;
+  if(isArray(original) && isObject(C = original.constructor)){
+    C = C[SPECIES];
+    if(C === null)C = undefined;
+  } return new(C === undefined ? Array : C)(length);
+};
 module.exports = function(TYPE){
   var IS_MAP        = TYPE == 1
     , IS_FILTER     = TYPE == 2
@@ -800,7 +811,7 @@ module.exports = function(TYPE){
       , f      = ctx(callbackfn, that, 3)
       , length = toLength(self.length)
       , index  = 0
-      , result = IS_MAP ? Array(length) : IS_FILTER ? [] : undefined
+      , result = IS_MAP ? ASC($this, length) : IS_FILTER ? ASC($this, 0) : undefined
       , val, res;
     for(;length > index; index++)if(NO_HOLES || index in self){
       val = self[index];
@@ -818,14 +829,23 @@ module.exports = function(TYPE){
     return IS_FIND_INDEX ? -1 : IS_SOME || IS_EVERY ? IS_EVERY : result;
   };
 };
-},{"./$.ctx":29,"./$.iobject":42,"./$.to-length":69,"./$.to-object":70}],23:[function(require,module,exports){
+},{"./$.ctx":29,"./$.iobject":42,"./$.is-array":44,"./$.is-object":45,"./$.to-length":70,"./$.to-object":71,"./$.wks":74}],23:[function(require,module,exports){
 // 19.1.2.1 Object.assign(target, source, ...)
 var toObject = require('./$.to-object')
   , IObject  = require('./$.iobject')
-  , enumKeys = require('./$.enum-keys');
+  , enumKeys = require('./$.enum-keys')
+  , has      = require('./$.has');
 
+// should work with symbols and should have deterministic property order (V8 bug)
 module.exports = require('./$.fails')(function(){
-  return Symbol() in Object.assign({}); // Object.assign available and Symbol is native
+  var a = Object.assign
+    , A = {}
+    , B = {}
+    , S = Symbol()
+    , K = 'abcdefghijklmnopqrst';
+  A[S] = 7;
+  K.split('').forEach(function(k){ B[k] = k; });
+  return a({}, A)[S] != 7 || Object.keys(a({}, B)).join('') != K;
 }) ? function assign(target, source){   // eslint-disable-line no-unused-vars
   var T = toObject(target)
     , l = arguments.length
@@ -836,11 +856,11 @@ module.exports = require('./$.fails')(function(){
       , length = keys.length
       , j      = 0
       , key;
-    while(length > j)T[key = keys[j++]] = S[key];
+    while(length > j)if(has(S, key = keys[j++]))T[key] = S[key];
   }
   return T;
 } : Object.assign;
-},{"./$.enum-keys":33,"./$.fails":34,"./$.iobject":42,"./$.to-object":70}],24:[function(require,module,exports){
+},{"./$.enum-keys":33,"./$.fails":34,"./$.has":38,"./$.iobject":42,"./$.to-object":71}],24:[function(require,module,exports){
 // getting tag from 19.1.3.6 Object.prototype.toString()
 var cof = require('./$.cof')
   , TAG = require('./$.wks')('toStringTag')
@@ -857,7 +877,7 @@ module.exports = function(it){
     // ES3 arguments fallback
     : (B = cof(O)) == 'Object' && typeof O.callee == 'function' ? 'Arguments' : B;
 };
-},{"./$.cof":25,"./$.wks":73}],25:[function(require,module,exports){
+},{"./$.cof":25,"./$.wks":74}],25:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = function(it){
@@ -949,7 +969,7 @@ module.exports = {
   frozenStore: frozenStore,
   WEAK: WEAK
 };
-},{"./$.an-object":21,"./$.array-methods":22,"./$.for-of":35,"./$.has":38,"./$.hide":39,"./$.is-object":44,"./$.mix":55,"./$.strict-new":62,"./$.uid":71}],27:[function(require,module,exports){
+},{"./$.an-object":21,"./$.array-methods":22,"./$.for-of":35,"./$.has":38,"./$.hide":39,"./$.is-object":45,"./$.mix":56,"./$.strict-new":63,"./$.uid":72}],27:[function(require,module,exports){
 'use strict';
 var $          = require('./$')
   , $def       = require('./$.def')
@@ -998,8 +1018,8 @@ module.exports = function(NAME, wrapper, methods, common, IS_MAP, IS_WEAK){
 
   return C;
 };
-},{"./$":51,"./$.def":30,"./$.fails":34,"./$.for-of":35,"./$.global":37,"./$.hide":39,"./$.mix":55,"./$.strict-new":62,"./$.support-desc":64,"./$.tag":65}],28:[function(require,module,exports){
-var core = module.exports = {};
+},{"./$":52,"./$.def":30,"./$.fails":34,"./$.for-of":35,"./$.global":37,"./$.hide":39,"./$.mix":56,"./$.strict-new":63,"./$.support-desc":65,"./$.tag":66}],28:[function(require,module,exports){
+var core = module.exports = {version: '1.2.1'};
 if(typeof __e == 'number')__e = core; // eslint-disable-line no-undef
 },{}],29:[function(require,module,exports){
 // optional / simple context binding
@@ -1017,9 +1037,10 @@ module.exports = function(fn, that, length){
     case 3: return function(a, b, c){
       return fn.call(that, a, b, c);
     };
-  } return function(/* ...args */){
-      return fn.apply(that, arguments);
-    };
+  }
+  return function(/* ...args */){
+    return fn.apply(that, arguments);
+  };
 };
 },{"./$.a-function":20}],30:[function(require,module,exports){
 var global    = require('./$.global')
@@ -1083,7 +1104,7 @@ var isObject = require('./$.is-object')
 module.exports = function(it){
   return is ? document.createElement(it) : {};
 };
-},{"./$.global":37,"./$.is-object":44}],33:[function(require,module,exports){
+},{"./$.global":37,"./$.is-object":45}],33:[function(require,module,exports){
 // all enumerable object keys, includes symbols
 var $ = require('./$');
 module.exports = function(it){
@@ -1098,7 +1119,7 @@ module.exports = function(it){
   }
   return keys;
 };
-},{"./$":51}],34:[function(require,module,exports){
+},{"./$":52}],34:[function(require,module,exports){
 module.exports = function(exec){
   try {
     return !!exec();
@@ -1126,7 +1147,7 @@ module.exports = function(iterable, entries, fn, that){
     call(iterator, f, step.value, entries);
   }
 };
-},{"./$.an-object":21,"./$.ctx":29,"./$.is-array-iter":43,"./$.iter-call":45,"./$.to-length":69,"./core.get-iterator-method":74}],36:[function(require,module,exports){
+},{"./$.an-object":21,"./$.ctx":29,"./$.is-array-iter":43,"./$.iter-call":46,"./$.to-length":70,"./core.get-iterator-method":75}],36:[function(require,module,exports){
 // fallback for IE11 buggy Object.getOwnPropertyNames with iframe and window
 var toString  = {}.toString
   , toIObject = require('./$.to-iobject')
@@ -1147,7 +1168,7 @@ module.exports.get = function getOwnPropertyNames(it){
   if(windowNames && toString.call(it) == '[object Window]')return getWindowNames(it);
   return getNames(toIObject(it));
 };
-},{"./$":51,"./$.to-iobject":68}],37:[function(require,module,exports){
+},{"./$":52,"./$.to-iobject":69}],37:[function(require,module,exports){
 // https://github.com/zloirock/core-js/issues/86#issuecomment-115759028
 var UNDEFINED = 'undefined';
 var global = module.exports = typeof window != UNDEFINED && window.Math == Math
@@ -1167,7 +1188,7 @@ module.exports = require('./$.support-desc') ? function(object, key, value){
   object[key] = value;
   return object;
 };
-},{"./$":51,"./$.property-desc":56,"./$.support-desc":64}],40:[function(require,module,exports){
+},{"./$":52,"./$.property-desc":57,"./$.support-desc":65}],40:[function(require,module,exports){
 module.exports = require('./$.global').document && document.documentElement;
 },{"./$.global":37}],41:[function(require,module,exports){
 // fast apply, http://jsperf.lnkit.com/fast-apply/5
@@ -1199,12 +1220,17 @@ var Iterators = require('./$.iterators')
 module.exports = function(it){
   return (Iterators.Array || Array.prototype[ITERATOR]) === it;
 };
-},{"./$.iterators":50,"./$.wks":73}],44:[function(require,module,exports){
-// http://jsperf.com/core-js-isobject
-module.exports = function(it){
-  return it !== null && (typeof it == 'object' || typeof it == 'function');
+},{"./$.iterators":51,"./$.wks":74}],44:[function(require,module,exports){
+// 7.2.2 IsArray(argument)
+var cof = require('./$.cof');
+module.exports = Array.isArray || function(arg){
+  return cof(arg) == 'Array';
 };
-},{}],45:[function(require,module,exports){
+},{"./$.cof":25}],45:[function(require,module,exports){
+module.exports = function(it){
+  return typeof it === 'object' ? it !== null : typeof it === 'function';
+};
+},{}],46:[function(require,module,exports){
 // call something on iterator step with safe closing on error
 var anObject = require('./$.an-object');
 module.exports = function(iterator, fn, value, entries){
@@ -1217,7 +1243,7 @@ module.exports = function(iterator, fn, value, entries){
     throw e;
   }
 };
-},{"./$.an-object":21}],46:[function(require,module,exports){
+},{"./$.an-object":21}],47:[function(require,module,exports){
 'use strict';
 var $ = require('./$')
   , IteratorPrototype = {};
@@ -1229,7 +1255,7 @@ module.exports = function(Constructor, NAME, next){
   Constructor.prototype = $.create(IteratorPrototype, {next: require('./$.property-desc')(1,next)});
   require('./$.tag')(Constructor, NAME + ' Iterator');
 };
-},{"./$":51,"./$.hide":39,"./$.property-desc":56,"./$.tag":65,"./$.wks":73}],47:[function(require,module,exports){
+},{"./$":52,"./$.hide":39,"./$.property-desc":57,"./$.tag":66,"./$.wks":74}],48:[function(require,module,exports){
 'use strict';
 var LIBRARY         = require('./$.library')
   , $def            = require('./$.def')
@@ -1280,7 +1306,7 @@ module.exports = function(Base, NAME, Constructor, next, DEFAULT, IS_SET, FORCE)
     } else $def($def.P + $def.F * BUGGY, NAME, methods);
   }
 };
-},{"./$":51,"./$.def":30,"./$.has":38,"./$.hide":39,"./$.iter-create":46,"./$.iterators":50,"./$.library":53,"./$.redef":57,"./$.tag":65,"./$.wks":73}],48:[function(require,module,exports){
+},{"./$":52,"./$.def":30,"./$.has":38,"./$.hide":39,"./$.iter-create":47,"./$.iterators":51,"./$.library":54,"./$.redef":58,"./$.tag":66,"./$.wks":74}],49:[function(require,module,exports){
 var SYMBOL_ITERATOR = require('./$.wks')('iterator')
   , SAFE_CLOSING    = false;
 try {
@@ -1300,13 +1326,13 @@ module.exports = function(exec){
   } catch(e){ /* empty */ }
   return safe;
 };
-},{"./$.wks":73}],49:[function(require,module,exports){
+},{"./$.wks":74}],50:[function(require,module,exports){
 module.exports = function(done, value){
   return {value: value, done: !!done};
 };
-},{}],50:[function(require,module,exports){
-module.exports = {};
 },{}],51:[function(require,module,exports){
+module.exports = {};
+},{}],52:[function(require,module,exports){
 var $Object = Object;
 module.exports = {
   create:     $Object.create,
@@ -1320,7 +1346,7 @@ module.exports = {
   getSymbols: $Object.getOwnPropertySymbols,
   each:       [].forEach
 };
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 var $         = require('./$')
   , toIObject = require('./$.to-iobject');
 module.exports = function(object, el){
@@ -1331,9 +1357,9 @@ module.exports = function(object, el){
     , key;
   while(length > index)if(O[key = keys[index++]] === el)return key;
 };
-},{"./$":51,"./$.to-iobject":68}],53:[function(require,module,exports){
+},{"./$":52,"./$.to-iobject":69}],54:[function(require,module,exports){
 module.exports = true;
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 var global    = require('./$.global')
   , macrotask = require('./$.task').set
   , Observer  = global.MutationObserver || global.WebKitMutationObserver
@@ -1391,13 +1417,13 @@ module.exports = function asap(fn){
     notify();
   } last = task;
 };
-},{"./$.cof":25,"./$.global":37,"./$.task":66}],55:[function(require,module,exports){
+},{"./$.cof":25,"./$.global":37,"./$.task":67}],56:[function(require,module,exports){
 var $redef = require('./$.redef');
 module.exports = function(target, src){
   for(var key in src)$redef(target, key, src[key]);
   return target;
 };
-},{"./$.redef":57}],56:[function(require,module,exports){
+},{"./$.redef":58}],57:[function(require,module,exports){
 module.exports = function(bitmap, value){
   return {
     enumerable  : !(bitmap & 1),
@@ -1406,13 +1432,13 @@ module.exports = function(bitmap, value){
     value       : value
   };
 };
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 module.exports = require('./$.hide');
-},{"./$.hide":39}],58:[function(require,module,exports){
+},{"./$.hide":39}],59:[function(require,module,exports){
 module.exports = Object.is || function is(x, y){
   return x === y ? x !== 0 || 1 / x === 1 / y : x != x && y != y;
 };
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 // Works with __proto__ only. Old v8 can't work with null proto objects.
 /* eslint-disable no-proto */
 var getDesc  = require('./$').getDesc
@@ -1423,30 +1449,30 @@ var check = function(O, proto){
   if(!isObject(proto) && proto !== null)throw TypeError(proto + ": can't set as prototype!");
 };
 module.exports = {
-  set: Object.setPrototypeOf || ('__proto__' in {} // eslint-disable-line
-    ? function(buggy, set){
-        try {
-          set = require('./$.ctx')(Function.call, getDesc(Object.prototype, '__proto__').set, 2);
-          set({}, []);
-        } catch(e){ buggy = true; }
-        return function setPrototypeOf(O, proto){
-          check(O, proto);
-          if(buggy)O.__proto__ = proto;
-          else set(O, proto);
-          return O;
-        };
-      }()
-    : undefined),
+  set: Object.setPrototypeOf || ('__proto__' in {} ? // eslint-disable-line no-proto
+    function(test, buggy, set){
+      try {
+        set = require('./$.ctx')(Function.call, getDesc(Object.prototype, '__proto__').set, 2);
+        set(test, []);
+        buggy = !(test instanceof Array);
+      } catch(e){ buggy = true; }
+      return function setPrototypeOf(O, proto){
+        check(O, proto);
+        if(buggy)O.__proto__ = proto;
+        else set(O, proto);
+        return O;
+      };
+    }({}, false) : undefined),
   check: check
 };
-},{"./$":51,"./$.an-object":21,"./$.ctx":29,"./$.is-object":44}],60:[function(require,module,exports){
+},{"./$":52,"./$.an-object":21,"./$.ctx":29,"./$.is-object":45}],61:[function(require,module,exports){
 var global = require('./$.global')
   , SHARED = '__core-js_shared__'
   , store  = global[SHARED] || (global[SHARED] = {});
 module.exports = function(key){
   return store[key] || (store[key] = {});
 };
-},{"./$.global":37}],61:[function(require,module,exports){
+},{"./$.global":37}],62:[function(require,module,exports){
 'use strict';
 var $       = require('./$')
   , SPECIES = require('./$.wks')('species');
@@ -1456,12 +1482,12 @@ module.exports = function(C){
     get: function(){ return this; }
   });
 };
-},{"./$":51,"./$.support-desc":64,"./$.wks":73}],62:[function(require,module,exports){
+},{"./$":52,"./$.support-desc":65,"./$.wks":74}],63:[function(require,module,exports){
 module.exports = function(it, Constructor, name){
   if(!(it instanceof Constructor))throw TypeError(name + ": use the 'new' operator!");
   return it;
 };
-},{}],63:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 // true  -> String#at
 // false -> String#codePointAt
 var toInteger = require('./$.to-integer')
@@ -1480,12 +1506,12 @@ module.exports = function(TO_STRING){
         : TO_STRING ? s.slice(i, i + 2) : (a - 0xd800 << 10) + (b - 0xdc00) + 0x10000;
   };
 };
-},{"./$.defined":31,"./$.to-integer":67}],64:[function(require,module,exports){
+},{"./$.defined":31,"./$.to-integer":68}],65:[function(require,module,exports){
 // Thank's IE8 for his funny defineProperty
 module.exports = !require('./$.fails')(function(){
   return Object.defineProperty({}, 'a', {get: function(){ return 7; }}).a != 7;
 });
-},{"./$.fails":34}],65:[function(require,module,exports){
+},{"./$.fails":34}],66:[function(require,module,exports){
 var has  = require('./$.has')
   , hide = require('./$.hide')
   , TAG  = require('./$.wks')('toStringTag');
@@ -1493,7 +1519,7 @@ var has  = require('./$.has')
 module.exports = function(it, tag, stat){
   if(it && !has(it = stat ? it : it.prototype, TAG))hide(it, TAG, tag);
 };
-},{"./$.has":38,"./$.hide":39,"./$.wks":73}],66:[function(require,module,exports){
+},{"./$.has":38,"./$.hide":39,"./$.wks":74}],67:[function(require,module,exports){
 'use strict';
 var ctx                = require('./$.ctx')
   , invoke             = require('./$.invoke')
@@ -1546,7 +1572,7 @@ if(!setTask || !clearTask){
     defer = ctx(port.postMessage, port, 1);
   // Browsers with postMessage, skip WebWorkers
   // IE8 has postMessage, but it's sync & typeof its postMessage is 'object'
-  } else if(global.addEventListener && typeof postMessage == 'function' && !global.importScript){
+  } else if(global.addEventListener && typeof postMessage == 'function' && !global.importScripts){
     defer = function(id){
       global.postMessage(id + '', '*');
     };
@@ -1570,56 +1596,56 @@ module.exports = {
   set:   setTask,
   clear: clearTask
 };
-},{"./$.cof":25,"./$.ctx":29,"./$.dom-create":32,"./$.global":37,"./$.html":40,"./$.invoke":41}],67:[function(require,module,exports){
+},{"./$.cof":25,"./$.ctx":29,"./$.dom-create":32,"./$.global":37,"./$.html":40,"./$.invoke":41}],68:[function(require,module,exports){
 // 7.1.4 ToInteger
 var ceil  = Math.ceil
   , floor = Math.floor;
 module.exports = function(it){
   return isNaN(it = +it) ? 0 : (it > 0 ? floor : ceil)(it);
 };
-},{}],68:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 // to indexed object, toObject with fallback for non-array-like ES3 strings
 var IObject = require('./$.iobject')
   , defined = require('./$.defined');
 module.exports = function(it){
   return IObject(defined(it));
 };
-},{"./$.defined":31,"./$.iobject":42}],69:[function(require,module,exports){
+},{"./$.defined":31,"./$.iobject":42}],70:[function(require,module,exports){
 // 7.1.15 ToLength
 var toInteger = require('./$.to-integer')
   , min       = Math.min;
 module.exports = function(it){
   return it > 0 ? min(toInteger(it), 0x1fffffffffffff) : 0; // pow(2, 53) - 1 == 9007199254740991
 };
-},{"./$.to-integer":67}],70:[function(require,module,exports){
+},{"./$.to-integer":68}],71:[function(require,module,exports){
 // 7.1.13 ToObject(argument)
 var defined = require('./$.defined');
 module.exports = function(it){
   return Object(defined(it));
 };
-},{"./$.defined":31}],71:[function(require,module,exports){
+},{"./$.defined":31}],72:[function(require,module,exports){
 var id = 0
   , px = Math.random();
 module.exports = function(key){
   return 'Symbol('.concat(key === undefined ? '' : key, ')_', (++id + px).toString(36));
 };
-},{}],72:[function(require,module,exports){
-module.exports = function(){ /* empty */ };
 },{}],73:[function(require,module,exports){
+module.exports = function(){ /* empty */ };
+},{}],74:[function(require,module,exports){
 var store  = require('./$.shared')('wks')
   , Symbol = require('./$.global').Symbol;
 module.exports = function(name){
   return store[name] || (store[name] =
     Symbol && Symbol[name] || (Symbol || require('./$.uid'))('Symbol.' + name));
 };
-},{"./$.global":37,"./$.shared":60,"./$.uid":71}],74:[function(require,module,exports){
+},{"./$.global":37,"./$.shared":61,"./$.uid":72}],75:[function(require,module,exports){
 var classof   = require('./$.classof')
   , ITERATOR  = require('./$.wks')('iterator')
   , Iterators = require('./$.iterators');
 module.exports = require('./$.core').getIteratorMethod = function(it){
   if(it != undefined)return it[ITERATOR] || it['@@iterator'] || Iterators[classof(it)];
 };
-},{"./$.classof":24,"./$.core":28,"./$.iterators":50,"./$.wks":73}],75:[function(require,module,exports){
+},{"./$.classof":24,"./$.core":28,"./$.iterators":51,"./$.wks":74}],76:[function(require,module,exports){
 'use strict';
 var ctx         = require('./$.ctx')
   , $def        = require('./$.def')
@@ -1645,7 +1671,8 @@ $def($def.S + $def.F * !require('./$.iter-detect')(function(iter){ Array.from(it
         result[index] = mapping ? call(iterator, mapfn, [step.value, index], true) : step.value;
       }
     } else {
-      for(result = new C(length = toLength(O.length)); length > index; index++){
+      length = toLength(O.length);
+      for(result = new C(length); length > index; index++){
         result[index] = mapping ? mapfn(O[index], index) : O[index];
       }
     }
@@ -1653,7 +1680,8 @@ $def($def.S + $def.F * !require('./$.iter-detect')(function(iter){ Array.from(it
     return result;
   }
 });
-},{"./$.ctx":29,"./$.def":30,"./$.is-array-iter":43,"./$.iter-call":45,"./$.iter-detect":48,"./$.to-length":69,"./$.to-object":70,"./core.get-iterator-method":74}],76:[function(require,module,exports){
+
+},{"./$.ctx":29,"./$.def":30,"./$.is-array-iter":43,"./$.iter-call":46,"./$.iter-detect":49,"./$.to-length":70,"./$.to-object":71,"./core.get-iterator-method":75}],77:[function(require,module,exports){
 'use strict';
 var setUnscope = require('./$.unscope')
   , step       = require('./$.iter-step')
@@ -1688,14 +1716,14 @@ Iterators.Arguments = Iterators.Array;
 setUnscope('keys');
 setUnscope('values');
 setUnscope('entries');
-},{"./$.iter-define":47,"./$.iter-step":49,"./$.iterators":50,"./$.to-iobject":68,"./$.unscope":72}],77:[function(require,module,exports){
+},{"./$.iter-define":48,"./$.iter-step":50,"./$.iterators":51,"./$.to-iobject":69,"./$.unscope":73}],78:[function(require,module,exports){
 // 19.1.3.1 Object.assign(target, source)
 var $def = require('./$.def');
 
 $def($def.S + $def.F, 'Object', {assign: require('./$.assign')});
-},{"./$.assign":23,"./$.def":30}],78:[function(require,module,exports){
+},{"./$.assign":23,"./$.def":30}],79:[function(require,module,exports){
 
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 'use strict';
 var $          = require('./$')
   , LIBRARY    = require('./$.library')
@@ -1799,10 +1827,14 @@ var notify = function(record, isReject){
     chain.length = 0;
     record.n = false;
     if(isReject)setTimeout(function(){
-      if(isUnhandled(record.p)){
+      var promise = record.p
+        , handler, console;
+      if(isUnhandled(promise)){
         if(isNode){
-          process.emit('unhandledRejection', value, record.p);
-        } else if(global.console && console.error){
+          process.emit('unhandledRejection', value, promise);
+        } else if(handler = global.onunhandledrejection){
+          handler({promise: promise, reason: value});
+        } else if((console = global.console) && console.error){
           console.error('Unhandled promise rejection', value);
         }
       } record.a = undefined;
@@ -1887,9 +1919,11 @@ if(!useNative){
         fail: typeof onRejected == 'function'  ? onRejected  : false
       };
       var promise = react.P = new (S != undefined ? S : P)(function(res, rej){
-        react.res = aFunction(res);
-        react.rej = aFunction(rej);
+        react.res = res;
+        react.rej = rej;
       });
+      aFunction(react.res);
+      aFunction(react.rej);
       var record = this[RECORD];
       record.c.push(react);
       if(record.a)record.a.push(react);
@@ -1953,7 +1987,7 @@ $def($def.S + $def.F * !(useNative && require('./$.iter-detect')(function(iter){
     });
   }
 });
-},{"./$":51,"./$.a-function":20,"./$.an-object":21,"./$.classof":24,"./$.core":28,"./$.ctx":29,"./$.def":30,"./$.for-of":35,"./$.global":37,"./$.is-object":44,"./$.iter-detect":48,"./$.library":53,"./$.microtask":54,"./$.mix":55,"./$.same":58,"./$.set-proto":59,"./$.species":61,"./$.strict-new":62,"./$.support-desc":64,"./$.tag":65,"./$.uid":71,"./$.wks":73}],80:[function(require,module,exports){
+},{"./$":52,"./$.a-function":20,"./$.an-object":21,"./$.classof":24,"./$.core":28,"./$.ctx":29,"./$.def":30,"./$.for-of":35,"./$.global":37,"./$.is-object":45,"./$.iter-detect":49,"./$.library":54,"./$.microtask":55,"./$.mix":56,"./$.same":59,"./$.set-proto":60,"./$.species":62,"./$.strict-new":63,"./$.support-desc":65,"./$.tag":66,"./$.uid":72,"./$.wks":74}],81:[function(require,module,exports){
 'use strict';
 var $at  = require('./$.string-at')(true);
 
@@ -1971,7 +2005,7 @@ require('./$.iter-define')(String, 'String', function(iterated){
   this._i += point.length;
   return {value: point, done: false};
 });
-},{"./$.iter-define":47,"./$.string-at":63}],81:[function(require,module,exports){
+},{"./$.iter-define":48,"./$.string-at":64}],82:[function(require,module,exports){
 'use strict';
 // ECMAScript 6 symbols shim
 var $              = require('./$')
@@ -1980,6 +2014,7 @@ var $              = require('./$')
   , SUPPORT_DESC   = require('./$.support-desc')
   , $def           = require('./$.def')
   , $redef         = require('./$.redef')
+  , $fails         = require('./$.fails')
   , shared         = require('./$.shared')
   , setTag         = require('./$.tag')
   , uid            = require('./$.uid')
@@ -1987,6 +2022,7 @@ var $              = require('./$')
   , keyOf          = require('./$.keyof')
   , $names         = require('./$.get-names')
   , enumKeys       = require('./$.enum-keys')
+  , isArray        = require('./$.is-array')
   , isObject       = require('./$.is-object')
   , anObject       = require('./$.an-object')
   , toIObject      = require('./$.to-iobject')
@@ -1996,6 +2032,8 @@ var $              = require('./$')
   , _create        = $.create
   , getNames       = $names.get
   , $Symbol        = global.Symbol
+  , $JSON          = global.JSON
+  , _stringify     = $JSON && $JSON.stringify
   , setter         = false
   , HIDDEN         = wks('_hidden')
   , isEnum         = $.isEnum
@@ -2004,22 +2042,17 @@ var $              = require('./$')
   , useNative      = typeof $Symbol == 'function'
   , ObjectProto    = Object.prototype;
 
-var setSymbolDesc = SUPPORT_DESC ? function(){ // fallback for old Android
-  try {
-    return _create(setDesc({}, HIDDEN, {
-      get: function(){
-        return setDesc(this, HIDDEN, {value: false})[HIDDEN];
-      }
-    }))[HIDDEN] || setDesc;
-  } catch(e){
-    return function(it, key, D){
-      var protoDesc = getDesc(ObjectProto, key);
-      if(protoDesc)delete ObjectProto[key];
-      setDesc(it, key, D);
-      if(protoDesc && it !== ObjectProto)setDesc(ObjectProto, key, protoDesc);
-    };
-  }
-}() : setDesc;
+// fallback for old Android, https://code.google.com/p/v8/issues/detail?id=687
+var setSymbolDesc = SUPPORT_DESC && $fails(function(){
+  return _create(setDesc({}, 'a', {
+    get: function(){ return setDesc(this, 'a', {value: 7}).a; }
+  })).a != 7;
+}) ? function(it, key, D){
+  var protoDesc = getDesc(ObjectProto, key);
+  if(protoDesc)delete ObjectProto[key];
+  setDesc(it, key, D);
+  if(protoDesc && it !== ObjectProto)setDesc(ObjectProto, key, protoDesc);
+} : setDesc;
 
 var wrap = function(tag){
   var sym = AllSymbols[tag] = _create($Symbol.prototype);
@@ -2032,6 +2065,10 @@ var wrap = function(tag){
     }
   });
   return sym;
+};
+
+var isSymbol = function(it){
+  return typeof it == 'symbol';
 };
 
 var $defineProperty = function defineProperty(it, key, D){
@@ -2083,16 +2120,41 @@ var $getOwnPropertySymbols = function getOwnPropertySymbols(it){
   while(names.length > i)if(has(AllSymbols, key = names[i++]))result.push(AllSymbols[key]);
   return result;
 };
+var $stringify = function stringify(it){
+  var args = [it]
+    , i    = 1
+    , replacer, $replacer;
+  while(arguments.length > i)args.push(arguments[i++]);
+  replacer = args[1];
+  if(typeof replacer == 'function')$replacer = replacer;
+  if($replacer || !isArray(replacer))replacer = function(key, value){
+    if($replacer)value = $replacer.call(this, key, value);
+    if(!isSymbol(value))return value;
+  };
+  args[1] = replacer;
+  return _stringify.apply($JSON, args);
+};
+var buggyJSON = $fails(function(){
+  var S = $Symbol();
+  // MS Edge converts symbol values to JSON as {}
+  // WebKit converts symbol values to JSON as null
+  // V8 throws on boxed symbols
+  return _stringify([S]) != '[null]' || _stringify({a: S}) != '{}' || _stringify(Object(S)) != '{}';
+});
 
 // 19.4.1.1 Symbol([description])
 if(!useNative){
   $Symbol = function Symbol(){
-    if(this instanceof $Symbol)throw TypeError('Symbol is not a constructor');
+    if(isSymbol(this))throw TypeError('Symbol is not a constructor');
     return wrap(uid(arguments[0]));
   };
   $redef($Symbol.prototype, 'toString', function toString(){
     return this._k;
   });
+
+  isSymbol = function(it){
+    return it instanceof $Symbol;
+  };
 
   $.create     = $create;
   $.isEnum     = $propertyIsEnumerable;
@@ -2106,14 +2168,6 @@ if(!useNative){
     $redef(ObjectProto, 'propertyIsEnumerable', $propertyIsEnumerable, true);
   }
 }
-
-// MS Edge converts symbol values to JSON as {}
-// WebKit converts symbol values in objects to JSON as null
-if(!useNative || require('./$.fails')(function(){
-  return JSON.stringify([{a: $Symbol()}, [$Symbol()]]) != '[{},[null]]';
-}))$redef($Symbol.prototype, 'toJSON', function toJSON(){
-  if(useNative && isObject(this))return this;
-});
 
 var symbolStatics = {
   // 19.4.2.1 Symbol.for(key)
@@ -2170,13 +2224,16 @@ $def($def.S + $def.F * !useNative, 'Object', {
   getOwnPropertySymbols: $getOwnPropertySymbols
 });
 
+// 24.3.2 JSON.stringify(value [, replacer [, space]])
+$JSON && $def($def.S + $def.F * (!useNative || buggyJSON), 'JSON', {stringify: $stringify});
+
 // 19.4.3.5 Symbol.prototype[@@toStringTag]
 setTag($Symbol, 'Symbol');
 // 20.2.1.9 Math[@@toStringTag]
 setTag(Math, 'Math', true);
 // 24.3.3 JSON[@@toStringTag]
 setTag(global.JSON, 'JSON', true);
-},{"./$":51,"./$.an-object":21,"./$.def":30,"./$.enum-keys":33,"./$.fails":34,"./$.get-names":36,"./$.global":37,"./$.has":38,"./$.is-object":44,"./$.keyof":52,"./$.library":53,"./$.property-desc":56,"./$.redef":57,"./$.shared":60,"./$.support-desc":64,"./$.tag":65,"./$.to-iobject":68,"./$.uid":71,"./$.wks":73}],82:[function(require,module,exports){
+},{"./$":52,"./$.an-object":21,"./$.def":30,"./$.enum-keys":33,"./$.fails":34,"./$.get-names":36,"./$.global":37,"./$.has":38,"./$.is-array":44,"./$.is-object":45,"./$.keyof":53,"./$.library":54,"./$.property-desc":57,"./$.redef":58,"./$.shared":61,"./$.support-desc":65,"./$.tag":66,"./$.to-iobject":69,"./$.uid":72,"./$.wks":74}],83:[function(require,module,exports){
 'use strict';
 var weak = require('./$.collection-weak');
 
@@ -2189,37 +2246,56 @@ require('./$.collection')('WeakSet', function(get){
     return weak.def(this, value, true);
   }
 }, weak, false, true);
-},{"./$.collection":27,"./$.collection-weak":26}],83:[function(require,module,exports){
+},{"./$.collection":27,"./$.collection-weak":26}],84:[function(require,module,exports){
 require('./es6.array.iterator');
 var Iterators = require('./$.iterators');
 Iterators.NodeList = Iterators.HTMLCollection = Iterators.Array;
-},{"./$.iterators":50,"./es6.array.iterator":76}],84:[function(require,module,exports){
-var getNative = require('../internal/getNative');
-
-/* Native method references for those with the same name as other `lodash` methods. */
-var nativeNow = getNative(Date, 'now');
+},{"./$.iterators":51,"./es6.array.iterator":77}],85:[function(require,module,exports){
+var isArray = require('../lang/isArray');
 
 /**
- * Gets the number of milliseconds that have elapsed since the Unix epoch
- * (1 January 1970 00:00:00 UTC).
+ * The inverse of `_.pairs`; this method returns an object composed from arrays
+ * of property names and values. Provide either a single two dimensional array,
+ * e.g. `[[key1, value1], [key2, value2]]` or two arrays, one of property names
+ * and one of corresponding values.
  *
  * @static
  * @memberOf _
- * @category Date
+ * @alias object
+ * @category Array
+ * @param {Array} props The property names.
+ * @param {Array} [values=[]] The property values.
+ * @returns {Object} Returns the new object.
  * @example
  *
- * _.defer(function(stamp) {
- *   console.log(_.now() - stamp);
- * }, _.now());
- * // => logs the number of milliseconds it took for the deferred function to be invoked
+ * _.zipObject([['fred', 30], ['barney', 40]]);
+ * // => { 'fred': 30, 'barney': 40 }
+ *
+ * _.zipObject(['fred', 'barney'], [30, 40]);
+ * // => { 'fred': 30, 'barney': 40 }
  */
-var now = nativeNow || function() {
-  return new Date().getTime();
-};
+function zipObject(props, values) {
+  var index = -1,
+      length = props ? props.length : 0,
+      result = {};
 
-module.exports = now;
+  if (length && !values && !isArray(props[0])) {
+    values = [];
+  }
+  while (++index < length) {
+    var key = props[index];
+    if (values) {
+      result[key] = values[index];
+    } else if (key) {
+      result[key[0]] = key[1];
+    }
+  }
+  return result;
+}
 
-},{"../internal/getNative":103}],85:[function(require,module,exports){
+module.exports = zipObject;
+
+},{"../lang/isArray":111}],86:[function(require,module,exports){
 /** Used as the `TypeError` message for "Functions" methods. */
 var FUNC_ERROR_TEXT = 'Expected a function';
 
@@ -2263,190 +2339,7 @@ function before(n, func) {
 
 module.exports = before;
 
-},{}],86:[function(require,module,exports){
-var isObject = require('../lang/isObject'),
-    now = require('../date/now');
-
-/** Used as the `TypeError` message for "Functions" methods. */
-var FUNC_ERROR_TEXT = 'Expected a function';
-
-/* Native method references for those with the same name as other `lodash` methods. */
-var nativeMax = Math.max;
-
-/**
- * Creates a debounced function that delays invoking `func` until after `wait`
- * milliseconds have elapsed since the last time the debounced function was
- * invoked. The debounced function comes with a `cancel` method to cancel
- * delayed invocations. Provide an options object to indicate that `func`
- * should be invoked on the leading and/or trailing edge of the `wait` timeout.
- * Subsequent calls to the debounced function return the result of the last
- * `func` invocation.
- *
- * **Note:** If `leading` and `trailing` options are `true`, `func` is invoked
- * on the trailing edge of the timeout only if the the debounced function is
- * invoked more than once during the `wait` timeout.
- *
- * See [David Corbacho's article](http://drupalmotion.com/article/debounce-and-throttle-visual-explanation)
- * for details over the differences between `_.debounce` and `_.throttle`.
- *
- * @static
- * @memberOf _
- * @category Function
- * @param {Function} func The function to debounce.
- * @param {number} [wait=0] The number of milliseconds to delay.
- * @param {Object} [options] The options object.
- * @param {boolean} [options.leading=false] Specify invoking on the leading
- *  edge of the timeout.
- * @param {number} [options.maxWait] The maximum time `func` is allowed to be
- *  delayed before it's invoked.
- * @param {boolean} [options.trailing=true] Specify invoking on the trailing
- *  edge of the timeout.
- * @returns {Function} Returns the new debounced function.
- * @example
- *
- * // avoid costly calculations while the window size is in flux
- * jQuery(window).on('resize', _.debounce(calculateLayout, 150));
- *
- * // invoke `sendMail` when the click event is fired, debouncing subsequent calls
- * jQuery('#postbox').on('click', _.debounce(sendMail, 300, {
- *   'leading': true,
- *   'trailing': false
- * }));
- *
- * // ensure `batchLog` is invoked once after 1 second of debounced calls
- * var source = new EventSource('/stream');
- * jQuery(source).on('message', _.debounce(batchLog, 250, {
- *   'maxWait': 1000
- * }));
- *
- * // cancel a debounced call
- * var todoChanges = _.debounce(batchLog, 1000);
- * Object.observe(models.todo, todoChanges);
- *
- * Object.observe(models, function(changes) {
- *   if (_.find(changes, { 'user': 'todo', 'type': 'delete'})) {
- *     todoChanges.cancel();
- *   }
- * }, ['delete']);
- *
- * // ...at some point `models.todo` is changed
- * models.todo.completed = true;
- *
- * // ...before 1 second has passed `models.todo` is deleted
- * // which cancels the debounced `todoChanges` call
- * delete models.todo;
- */
-function debounce(func, wait, options) {
-  var args,
-      maxTimeoutId,
-      result,
-      stamp,
-      thisArg,
-      timeoutId,
-      trailingCall,
-      lastCalled = 0,
-      maxWait = false,
-      trailing = true;
-
-  if (typeof func != 'function') {
-    throw new TypeError(FUNC_ERROR_TEXT);
-  }
-  wait = wait < 0 ? 0 : (+wait || 0);
-  if (options === true) {
-    var leading = true;
-    trailing = false;
-  } else if (isObject(options)) {
-    leading = !!options.leading;
-    maxWait = 'maxWait' in options && nativeMax(+options.maxWait || 0, wait);
-    trailing = 'trailing' in options ? !!options.trailing : trailing;
-  }
-
-  function cancel() {
-    if (timeoutId) {
-      clearTimeout(timeoutId);
-    }
-    if (maxTimeoutId) {
-      clearTimeout(maxTimeoutId);
-    }
-    lastCalled = 0;
-    maxTimeoutId = timeoutId = trailingCall = undefined;
-  }
-
-  function complete(isCalled, id) {
-    if (id) {
-      clearTimeout(id);
-    }
-    maxTimeoutId = timeoutId = trailingCall = undefined;
-    if (isCalled) {
-      lastCalled = now();
-      result = func.apply(thisArg, args);
-      if (!timeoutId && !maxTimeoutId) {
-        args = thisArg = undefined;
-      }
-    }
-  }
-
-  function delayed() {
-    var remaining = wait - (now() - stamp);
-    if (remaining <= 0 || remaining > wait) {
-      complete(trailingCall, maxTimeoutId);
-    } else {
-      timeoutId = setTimeout(delayed, remaining);
-    }
-  }
-
-  function maxDelayed() {
-    complete(trailing, timeoutId);
-  }
-
-  function debounced() {
-    args = arguments;
-    stamp = now();
-    thisArg = this;
-    trailingCall = trailing && (timeoutId || !leading);
-
-    if (maxWait === false) {
-      var leadingCall = leading && !timeoutId;
-    } else {
-      if (!maxTimeoutId && !leading) {
-        lastCalled = stamp;
-      }
-      var remaining = maxWait - (stamp - lastCalled),
-          isCalled = remaining <= 0 || remaining > maxWait;
-
-      if (isCalled) {
-        if (maxTimeoutId) {
-          maxTimeoutId = clearTimeout(maxTimeoutId);
-        }
-        lastCalled = stamp;
-        result = func.apply(thisArg, args);
-      }
-      else if (!maxTimeoutId) {
-        maxTimeoutId = setTimeout(maxDelayed, remaining);
-      }
-    }
-    if (isCalled && timeoutId) {
-      timeoutId = clearTimeout(timeoutId);
-    }
-    else if (!timeoutId && wait !== maxWait) {
-      timeoutId = setTimeout(delayed, wait);
-    }
-    if (leadingCall) {
-      isCalled = true;
-      result = func.apply(thisArg, args);
-    }
-    if (isCalled && !timeoutId && !maxTimeoutId) {
-      args = thisArg = undefined;
-    }
-    return result;
-  }
-  debounced.cancel = cancel;
-  return debounced;
-}
-
-module.exports = debounce;
-
-},{"../date/now":84,"../lang/isObject":115}],87:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 var baseDelay = require('../internal/baseDelay'),
     restParam = require('./restParam');
 
@@ -2473,7 +2366,7 @@ var defer = restParam(function(func, args) {
 
 module.exports = defer;
 
-},{"../internal/baseDelay":94,"./restParam":89}],88:[function(require,module,exports){
+},{"../internal/baseDelay":93,"./restParam":89}],88:[function(require,module,exports){
 var before = require('./before');
 
 /**
@@ -2499,7 +2392,7 @@ function once(func) {
 
 module.exports = once;
 
-},{"./before":85}],89:[function(require,module,exports){
+},{"./before":86}],89:[function(require,module,exports){
 /** Used as the `TypeError` message for "Functions" methods. */
 var FUNC_ERROR_TEXT = 'Expected a function';
 
@@ -2560,70 +2453,6 @@ function restParam(func, start) {
 module.exports = restParam;
 
 },{}],90:[function(require,module,exports){
-var debounce = require('./debounce'),
-    isObject = require('../lang/isObject');
-
-/** Used as the `TypeError` message for "Functions" methods. */
-var FUNC_ERROR_TEXT = 'Expected a function';
-
-/**
- * Creates a throttled function that only invokes `func` at most once per
- * every `wait` milliseconds. The throttled function comes with a `cancel`
- * method to cancel delayed invocations. Provide an options object to indicate
- * that `func` should be invoked on the leading and/or trailing edge of the
- * `wait` timeout. Subsequent calls to the throttled function return the
- * result of the last `func` call.
- *
- * **Note:** If `leading` and `trailing` options are `true`, `func` is invoked
- * on the trailing edge of the timeout only if the the throttled function is
- * invoked more than once during the `wait` timeout.
- *
- * See [David Corbacho's article](http://drupalmotion.com/article/debounce-and-throttle-visual-explanation)
- * for details over the differences between `_.throttle` and `_.debounce`.
- *
- * @static
- * @memberOf _
- * @category Function
- * @param {Function} func The function to throttle.
- * @param {number} [wait=0] The number of milliseconds to throttle invocations to.
- * @param {Object} [options] The options object.
- * @param {boolean} [options.leading=true] Specify invoking on the leading
- *  edge of the timeout.
- * @param {boolean} [options.trailing=true] Specify invoking on the trailing
- *  edge of the timeout.
- * @returns {Function} Returns the new throttled function.
- * @example
- *
- * // avoid excessively updating the position while scrolling
- * jQuery(window).on('scroll', _.throttle(updatePosition, 100));
- *
- * // invoke `renewToken` when the click event is fired, but not more than once every 5 minutes
- * jQuery('.interactive').on('click', _.throttle(renewToken, 300000, {
- *   'trailing': false
- * }));
- *
- * // cancel a trailing throttled call
- * jQuery(window).on('popstate', throttled.cancel);
- */
-function throttle(func, wait, options) {
-  var leading = true,
-      trailing = true;
-
-  if (typeof func != 'function') {
-    throw new TypeError(FUNC_ERROR_TEXT);
-  }
-  if (options === false) {
-    leading = false;
-  } else if (isObject(options)) {
-    leading = 'leading' in options ? !!options.leading : leading;
-    trailing = 'trailing' in options ? !!options.trailing : trailing;
-  }
-  return debounce(func, wait, { 'leading': leading, 'maxWait': +wait, 'trailing': trailing });
-}
-
-module.exports = throttle;
-
-},{"../lang/isObject":115,"./debounce":86}],91:[function(require,module,exports){
 var keys = require('../object/keys');
 
 /**
@@ -2657,7 +2486,7 @@ function assignWith(object, source, customizer) {
 
 module.exports = assignWith;
 
-},{"../object/keys":118}],92:[function(require,module,exports){
+},{"../object/keys":117}],91:[function(require,module,exports){
 var baseCopy = require('./baseCopy'),
     keys = require('../object/keys');
 
@@ -2678,7 +2507,7 @@ function baseAssign(object, source) {
 
 module.exports = baseAssign;
 
-},{"../object/keys":118,"./baseCopy":93}],93:[function(require,module,exports){
+},{"../object/keys":117,"./baseCopy":92}],92:[function(require,module,exports){
 /**
  * Copies properties of `source` to `object`.
  *
@@ -2703,7 +2532,7 @@ function baseCopy(source, props, object) {
 
 module.exports = baseCopy;
 
-},{}],94:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 /** Used as the `TypeError` message for "Functions" methods. */
 var FUNC_ERROR_TEXT = 'Expected a function';
 
@@ -2726,7 +2555,7 @@ function baseDelay(func, wait, args) {
 
 module.exports = baseDelay;
 
-},{}],95:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 var createBaseFor = require('./createBaseFor');
 
 /**
@@ -2745,7 +2574,7 @@ var baseFor = createBaseFor();
 
 module.exports = baseFor;
 
-},{"./createBaseFor":100}],96:[function(require,module,exports){
+},{"./createBaseFor":99}],95:[function(require,module,exports){
 var baseFor = require('./baseFor'),
     keys = require('../object/keys');
 
@@ -2764,7 +2593,7 @@ function baseForOwn(object, iteratee) {
 
 module.exports = baseForOwn;
 
-},{"../object/keys":118,"./baseFor":95}],97:[function(require,module,exports){
+},{"../object/keys":117,"./baseFor":94}],96:[function(require,module,exports){
 /**
  * The base implementation of `_.property` without support for deep paths.
  *
@@ -2780,7 +2609,7 @@ function baseProperty(key) {
 
 module.exports = baseProperty;
 
-},{}],98:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 var identity = require('../utility/identity');
 
 /**
@@ -2821,7 +2650,7 @@ function bindCallback(func, thisArg, argCount) {
 
 module.exports = bindCallback;
 
-},{"../utility/identity":120}],99:[function(require,module,exports){
+},{"../utility/identity":119}],98:[function(require,module,exports){
 var bindCallback = require('./bindCallback'),
     isIterateeCall = require('./isIterateeCall'),
     restParam = require('../function/restParam');
@@ -2864,7 +2693,7 @@ function createAssigner(assigner) {
 
 module.exports = createAssigner;
 
-},{"../function/restParam":89,"./bindCallback":98,"./isIterateeCall":106}],100:[function(require,module,exports){
+},{"../function/restParam":89,"./bindCallback":97,"./isIterateeCall":105}],99:[function(require,module,exports){
 var toObject = require('./toObject');
 
 /**
@@ -2893,7 +2722,7 @@ function createBaseFor(fromRight) {
 
 module.exports = createBaseFor;
 
-},{"./toObject":110}],101:[function(require,module,exports){
+},{"./toObject":109}],100:[function(require,module,exports){
 var bindCallback = require('./bindCallback');
 
 /**
@@ -2914,7 +2743,7 @@ function createForOwn(objectFunc) {
 
 module.exports = createForOwn;
 
-},{"./bindCallback":98}],102:[function(require,module,exports){
+},{"./bindCallback":97}],101:[function(require,module,exports){
 var baseProperty = require('./baseProperty');
 
 /**
@@ -2931,7 +2760,7 @@ var getLength = baseProperty('length');
 
 module.exports = getLength;
 
-},{"./baseProperty":97}],103:[function(require,module,exports){
+},{"./baseProperty":96}],102:[function(require,module,exports){
 var isNative = require('../lang/isNative');
 
 /**
@@ -2949,7 +2778,7 @@ function getNative(object, key) {
 
 module.exports = getNative;
 
-},{"../lang/isNative":114}],104:[function(require,module,exports){
+},{"../lang/isNative":113}],103:[function(require,module,exports){
 var getLength = require('./getLength'),
     isLength = require('./isLength');
 
@@ -2966,7 +2795,7 @@ function isArrayLike(value) {
 
 module.exports = isArrayLike;
 
-},{"./getLength":102,"./isLength":107}],105:[function(require,module,exports){
+},{"./getLength":101,"./isLength":106}],104:[function(require,module,exports){
 /** Used to detect unsigned integer values. */
 var reIsUint = /^\d+$/;
 
@@ -2992,7 +2821,7 @@ function isIndex(value, length) {
 
 module.exports = isIndex;
 
-},{}],106:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 var isArrayLike = require('./isArrayLike'),
     isIndex = require('./isIndex'),
     isObject = require('../lang/isObject');
@@ -3022,7 +2851,7 @@ function isIterateeCall(value, index, object) {
 
 module.exports = isIterateeCall;
 
-},{"../lang/isObject":115,"./isArrayLike":104,"./isIndex":105}],107:[function(require,module,exports){
+},{"../lang/isObject":114,"./isArrayLike":103,"./isIndex":104}],106:[function(require,module,exports){
 /**
  * Used as the [maximum length](http://ecma-international.org/ecma-262/6.0/#sec-number.max_safe_integer)
  * of an array-like value.
@@ -3044,7 +2873,7 @@ function isLength(value) {
 
 module.exports = isLength;
 
-},{}],108:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 /**
  * Checks if `value` is object-like.
  *
@@ -3058,7 +2887,7 @@ function isObjectLike(value) {
 
 module.exports = isObjectLike;
 
-},{}],109:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 var isArguments = require('../lang/isArguments'),
     isArray = require('../lang/isArray'),
     isIndex = require('./isIndex'),
@@ -3101,7 +2930,7 @@ function shimKeys(object) {
 
 module.exports = shimKeys;
 
-},{"../lang/isArguments":111,"../lang/isArray":112,"../object/keysIn":119,"./isIndex":105,"./isLength":107}],110:[function(require,module,exports){
+},{"../lang/isArguments":110,"../lang/isArray":111,"../object/keysIn":118,"./isIndex":104,"./isLength":106}],109:[function(require,module,exports){
 var isObject = require('../lang/isObject');
 
 /**
@@ -3117,7 +2946,7 @@ function toObject(value) {
 
 module.exports = toObject;
 
-},{"../lang/isObject":115}],111:[function(require,module,exports){
+},{"../lang/isObject":114}],110:[function(require,module,exports){
 var isArrayLike = require('../internal/isArrayLike'),
     isObjectLike = require('../internal/isObjectLike');
 
@@ -3153,7 +2982,7 @@ function isArguments(value) {
 
 module.exports = isArguments;
 
-},{"../internal/isArrayLike":104,"../internal/isObjectLike":108}],112:[function(require,module,exports){
+},{"../internal/isArrayLike":103,"../internal/isObjectLike":107}],111:[function(require,module,exports){
 var getNative = require('../internal/getNative'),
     isLength = require('../internal/isLength'),
     isObjectLike = require('../internal/isObjectLike');
@@ -3195,7 +3024,7 @@ var isArray = nativeIsArray || function(value) {
 
 module.exports = isArray;
 
-},{"../internal/getNative":103,"../internal/isLength":107,"../internal/isObjectLike":108}],113:[function(require,module,exports){
+},{"../internal/getNative":102,"../internal/isLength":106,"../internal/isObjectLike":107}],112:[function(require,module,exports){
 var isObject = require('./isObject');
 
 /** `Object#toString` result references. */
@@ -3235,7 +3064,7 @@ function isFunction(value) {
 
 module.exports = isFunction;
 
-},{"./isObject":115}],114:[function(require,module,exports){
+},{"./isObject":114}],113:[function(require,module,exports){
 var isFunction = require('./isFunction'),
     isObjectLike = require('../internal/isObjectLike');
 
@@ -3285,7 +3114,7 @@ function isNative(value) {
 
 module.exports = isNative;
 
-},{"../internal/isObjectLike":108,"./isFunction":113}],115:[function(require,module,exports){
+},{"../internal/isObjectLike":107,"./isFunction":112}],114:[function(require,module,exports){
 /**
  * Checks if `value` is the [language type](https://es5.github.io/#x8) of `Object`.
  * (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
@@ -3315,7 +3144,7 @@ function isObject(value) {
 
 module.exports = isObject;
 
-},{}],116:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 var assignWith = require('../internal/assignWith'),
     baseAssign = require('../internal/baseAssign'),
     createAssigner = require('../internal/createAssigner');
@@ -3360,7 +3189,7 @@ var assign = createAssigner(function(object, source, customizer) {
 
 module.exports = assign;
 
-},{"../internal/assignWith":91,"../internal/baseAssign":92,"../internal/createAssigner":99}],117:[function(require,module,exports){
+},{"../internal/assignWith":90,"../internal/baseAssign":91,"../internal/createAssigner":98}],116:[function(require,module,exports){
 var baseForOwn = require('../internal/baseForOwn'),
     createForOwn = require('../internal/createForOwn');
 
@@ -3395,7 +3224,7 @@ var forOwn = createForOwn(baseForOwn);
 
 module.exports = forOwn;
 
-},{"../internal/baseForOwn":96,"../internal/createForOwn":101}],118:[function(require,module,exports){
+},{"../internal/baseForOwn":95,"../internal/createForOwn":100}],117:[function(require,module,exports){
 var getNative = require('../internal/getNative'),
     isArrayLike = require('../internal/isArrayLike'),
     isObject = require('../lang/isObject'),
@@ -3442,7 +3271,7 @@ var keys = !nativeKeys ? shimKeys : function(object) {
 
 module.exports = keys;
 
-},{"../internal/getNative":103,"../internal/isArrayLike":104,"../internal/shimKeys":109,"../lang/isObject":115}],119:[function(require,module,exports){
+},{"../internal/getNative":102,"../internal/isArrayLike":103,"../internal/shimKeys":108,"../lang/isObject":114}],118:[function(require,module,exports){
 var isArguments = require('../lang/isArguments'),
     isArray = require('../lang/isArray'),
     isIndex = require('../internal/isIndex'),
@@ -3508,7 +3337,7 @@ function keysIn(object) {
 
 module.exports = keysIn;
 
-},{"../internal/isIndex":105,"../internal/isLength":107,"../lang/isArguments":111,"../lang/isArray":112,"../lang/isObject":115}],120:[function(require,module,exports){
+},{"../internal/isIndex":104,"../internal/isLength":106,"../lang/isArguments":110,"../lang/isArray":111,"../lang/isObject":114}],119:[function(require,module,exports){
 /**
  * This method returns the first argument provided to it.
  *
@@ -3530,7 +3359,7 @@ function identity(value) {
 
 module.exports = identity;
 
-},{}],121:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -3623,7 +3452,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],122:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3709,7 +3538,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],123:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3796,13 +3625,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],124:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":122,"./encode":123}],125:[function(require,module,exports){
+},{"./decode":121,"./encode":122}],124:[function(require,module,exports){
 
 //jshint ignore:start
 
@@ -3836,6 +3665,7 @@ var _cachebustUrl2 = _interopRequireDefault(_cachebustUrl);
 var forOwn = require('lodash/object/forOwn');
 
 var MAX_TIMEOUT = 64 * 1000; //64 seconds
+var MAX_RETRIES = 5;
 var serversToIgnore = {};
 
 // Simple ajax helper.
@@ -3863,7 +3693,11 @@ function ajax(opts) {
       }
     }
 
-    var server = url.match(/(?:(?:[a-z]+:)?\/\/)?([^/]*)\//)[1];
+    var match = url.match(/(?:(?:[a-z]+:)?\/\/)?([^/]*)\//);
+    if (!match) {
+      throw new Error("Failed to match url");
+    }
+    var server = match[1];
     if (Object.prototype.hasOwnProperty.call(serversToIgnore, server)) {
       reject(new Error('Server at ' + url + ' has told us to stop connecting'));
       return;
@@ -3876,9 +3710,11 @@ function ajax(opts) {
     var xhr = new XMLHttpRequest();
     _Object$assign(xhr, opts.xhrFields);
     xhr.onerror = function (event) {
-      if (xhr.status === 502) {
-        resolve(_retry(opts));
-        return;
+      if ((opts.retryNum || 0) < MAX_RETRIES) {
+        if (xhr.status === 502 || (xhr.status === 0 || xhr.status >= 500) && (method === "GET" || method === "HEAD")) {
+          resolve(_retry(opts));
+          return;
+        }
       }
 
       var err = _Object$assign(new Error('Failed to load ' + url), {
@@ -3893,10 +3729,14 @@ function ajax(opts) {
       reject(err);
     };
     xhr.onload = function (event) {
-      resolve({
-        xhr: xhr,
-        text: xhr.responseText
-      });
+      if (xhr.status === 200) {
+        resolve({
+          xhr: xhr,
+          text: xhr.responseText
+        });
+      } else {
+        xhr.onerror(event);
+      }
     };
     xhr.open(method, url, true);
     forOwn(opts.headers, function (value, name) {
@@ -3907,20 +3747,18 @@ function ajax(opts) {
 }
 
 function _retry(opts) {
-  var retryTimeout = opts.retryTimeout;
-  if (!retryTimeout) {
-    retryTimeout = 2 * 1000; //2 seconds
-  } else {
-      retryTimeout = Math.min(retryTimeout * 2, MAX_TIMEOUT);
-    }
+  var retryNum = (opts.retryNum || 0) + 1;
+
+  // 2000 4000 8000...
+  var retryTimeout = Math.min(Math.pow(2, retryNum) * 1000, MAX_TIMEOUT);
 
   return (0, _delay2['default'])(retryTimeout).then(function () {
-    return ajax(_extends({}, opts, { retryTimeout: retryTimeout }));
+    return ajax(_extends({}, opts, { retryNum: retryNum }));
   });
 }
 module.exports = exports['default'];
 
-},{"./cachebust-url":126,"./delay":127,"babel-runtime/core-js/object/assign":2,"babel-runtime/core-js/promise":4,"babel-runtime/helpers/extends":8,"babel-runtime/helpers/interop-require-default":9,"lodash/object/forOwn":117,"querystring":124}],126:[function(require,module,exports){
+},{"./cachebust-url":125,"./delay":127,"babel-runtime/core-js/object/assign":2,"babel-runtime/core-js/promise":4,"babel-runtime/helpers/extends":8,"babel-runtime/helpers/interop-require-default":9,"lodash/object/forOwn":116,"querystring":123}],125:[function(require,module,exports){
 
 //jshint ignore:start
 
@@ -3943,7 +3781,57 @@ function cachebustUrl(url) {
 
 module.exports = exports["default"];
 
-},{}],127:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
+
+//jshint ignore:start
+
+'use strict';
+
+var _Promise = require('babel-runtime/core-js/promise')['default'];
+
+var _interopRequireDefault = require('babel-runtime/helpers/interop-require-default')['default'];
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+exports['default'] = connectivityTest;
+
+var _cachebustUrl = require('./cachebust-url');
+
+var _cachebustUrl2 = _interopRequireDefault(_cachebustUrl);
+
+var _lodashArrayZipObject = require('lodash/array/zipObject');
+
+var _lodashArrayZipObject2 = _interopRequireDefault(_lodashArrayZipObject);
+
+var URLS = ['https://mailfoogae.appspot.com/build/images/composeOverflowToggle.png', 'https://www.streak.com/build/images/composeOverflowToggle.png', 'https://www.inboxsdk.com/images/logo-red.png'];
+
+function imageTest(url) {
+  return new _Promise(function (resolve, reject) {
+    var img = document.createElement('img');
+    img.onload = function () {
+      resolve(true);
+    };
+    img.onloadend = img.onerror = function () {
+      resolve(false);
+    };
+    img.src = (0, _cachebustUrl2['default'])(url);
+  });
+}
+
+function connectivityTest() {
+  return _Promise.all(URLS.map(function (url) {
+    return imageTest(url).then(function (success) {
+      return [url, success];
+    });
+  })).then(function (results) {
+    return (0, _lodashArrayZipObject2['default'])(results);
+  });
+}
+
+module.exports = exports['default'];
+
+},{"./cachebust-url":125,"babel-runtime/core-js/promise":4,"babel-runtime/helpers/interop-require-default":9,"lodash/array/zipObject":85}],127:[function(require,module,exports){
 
 //jshint ignore:start
 
@@ -3990,6 +3878,34 @@ module.exports = exports['default'];
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{}],129:[function(require,module,exports){
+(function (global){
+
+//jshint ignore:start
+
+'use strict';
+
+Object.defineProperty(exports, '__esModule', {
+  value: true
+});
+exports['default'] = getSessionId;
+
+function getSessionId() {
+  if (global.document && document.documentElement.hasAttribute('data-inboxsdk-session-id')) {
+    return document.documentElement.getAttribute('data-inboxsdk-session-id');
+  } else {
+    var sessionId = Date.now() + '-' + Math.random();
+    if (global.document) {
+      document.documentElement.setAttribute('data-inboxsdk-session-id', sessionId);
+    }
+    return sessionId;
+  }
+}
+
+module.exports = exports['default'];
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],130:[function(require,module,exports){
 
 //jshint ignore:start
 
@@ -4009,7 +3925,7 @@ function getStackTrace() {
 
 module.exports = exports["default"];
 
-},{}],130:[function(require,module,exports){
+},{}],131:[function(require,module,exports){
 (function (global){
 
 //jshint ignore:start
@@ -4024,6 +3940,10 @@ Object.defineProperty(exports, '__esModule', {
   value: true
 });
 exports['default'] = loadScript;
+
+var _connectivityTest = require('./connectivity-test');
+
+var _connectivityTest2 = _interopRequireDefault(_connectivityTest);
 
 var _logError = require('./log-error');
 
@@ -4114,6 +4034,10 @@ function loadScript(url, opts) {
                 return attempt(retryNum + 1, err);
               });
             }
+            // SyntaxErrors are the only errors that can happen during eval that we
+            // retry because sometimes AppEngine doesn't serve the full javascript.
+            // No other error is retried because other errors aren't likely to be
+            // transient.
             throw err;
           }
           if (!opts || !opts.nowrap) {
@@ -4133,20 +4057,25 @@ function loadScript(url, opts) {
       });
     });
   }
-  return pr['catch'](function (err) {
-    (0, _logError2['default'])(err, {
-      url: url,
-      message: 'Failed to load script'
-    }, {});
-    throw err;
+  pr['catch'](function (err) {
+    return (0, _connectivityTest2['default'])().then(function (connectivityTestResults) {
+      (0, _logError2['default'])(err, {
+        url: url,
+        connectivityTestResults: connectivityTestResults,
+        status: err && err.status,
+        response: err && err.xhr ? err.xhr.responseText : null,
+        message: 'Failed to load script'
+      }, {});
+    });
   });
+  return pr;
 }
 
 module.exports = exports['default'];
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./ajax":125,"./delay":127,"./log-error":131,"babel-runtime/core-js/promise":4,"babel-runtime/helpers/interop-require-default":9,"lodash/function/defer":87,"lodash/function/once":88}],131:[function(require,module,exports){
+},{"./ajax":124,"./connectivity-test":126,"./delay":127,"./log-error":132,"babel-runtime/core-js/promise":4,"babel-runtime/helpers/interop-require-default":9,"lodash/function/defer":87,"lodash/function/once":88}],132:[function(require,module,exports){
 (function (global){
 
 //jshint ignore:start
@@ -4170,6 +4099,10 @@ var _ajax = require('./ajax');
 
 var _ajax2 = _interopRequireDefault(_ajax);
 
+var _rateLimit = require('./rate-limit');
+
+var _rateLimit2 = _interopRequireDefault(_rateLimit);
+
 var _getStackTrace = require('./get-stack-trace');
 
 var _getStackTrace2 = _interopRequireDefault(_getStackTrace);
@@ -4178,9 +4111,13 @@ var _getExtensionId = require('./get-extension-id');
 
 var _getExtensionId2 = _interopRequireDefault(_getExtensionId);
 
+var _getSessionId = require('./get-session-id');
+
+var _getSessionId2 = _interopRequireDefault(_getSessionId);
+
 var _version = require('./version');
 
-var throttle = require('lodash/function/throttle');
+var sessionId = (0, _getSessionId2['default'])();
 
 // code inside the platform-implementation should use logger.js instead of
 // interacting with this directly!
@@ -4210,7 +4147,6 @@ function logError(err, details, context) {
     }
     var appId = context.appId;
     var appIds = context.appIds;
-    var sessionId = context.sessionId;
     var implVersion = context.implVersion;
     var userEmailHash = context.userEmailHash;
 
@@ -4282,7 +4218,8 @@ function markErrorAsSeen(error) {
   }
 }
 
-var sendError = throttle(function callee$0$0(report) {
+// Only let 10 errors be sent per minute.
+var sendError = (0, _rateLimit2['default'])(function callee$0$0(report) {
   var args,
       args$1$0 = arguments;
   return _regeneratorRuntime.async(function callee$0$0$(context$1$0) {
@@ -4315,7 +4252,7 @@ var sendError = throttle(function callee$0$0(report) {
         return context$1$0.stop();
     }
   }, null, this, [[1, 6]]);
-}, 1000);
+}, 60 * 1000, 10);
 
 function tooManyErrors(err2, originalArgs) {
   console.error("ERROR REPORTING ERROR", err2);
@@ -4325,7 +4262,37 @@ module.exports = exports['default'];
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./ajax":125,"./get-extension-id":128,"./get-stack-trace":129,"./version":132,"babel-runtime/core-js/weak-set":7,"babel-runtime/helpers/interop-require-default":9,"babel-runtime/helpers/to-consumable-array":10,"babel-runtime/regenerator":11,"lodash/function/throttle":90}],132:[function(require,module,exports){
+},{"./ajax":124,"./get-extension-id":128,"./get-session-id":129,"./get-stack-trace":130,"./rate-limit":133,"./version":134,"babel-runtime/core-js/weak-set":7,"babel-runtime/helpers/interop-require-default":9,"babel-runtime/helpers/to-consumable-array":10,"babel-runtime/regenerator":11}],133:[function(require,module,exports){
+
+//jshint ignore:start
+
+// Returns a wrapped version of the function which throws an exception if it's
+// called more than count times within period amount of time.
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = rateLimit;
+
+function rateLimit(fn, period, count) {
+  var calls = [];
+  return function () {
+    var now = Date.now();
+    calls = calls.filter(function (time) {
+      return time >= now - period;
+    });
+    if (calls.length >= count) {
+      throw new Error("Function rate limit exceeded");
+    }
+    calls.push(now);
+    return fn.apply(this, arguments);
+  };
+}
+
+module.exports = exports["default"];
+
+},{}],134:[function(require,module,exports){
 
 //jshint ignore:start
 
@@ -4334,13 +4301,13 @@ module.exports = exports['default'];
 
 "use strict";
 
-exports.BUILD_VERSION = "0.7.13-1443562752054-9c9200bc73fd1196";
+exports.BUILD_VERSION = "0.7.15-1448415056202-0485aa70d326d4df";
 
 if (module.hot) {
   module.hot.accept();
 }
 
-},{}],133:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 (function (global){
 "use strict";
 
@@ -4354,7 +4321,7 @@ module.exports = checkRequirements;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],134:[function(require,module,exports){
+},{}],136:[function(require,module,exports){
 'use strict';
 
 var assign = require('lodash/object/assign');
@@ -4364,22 +4331,10 @@ var PlatformImplementationLoader = require('./loading/platform-implementation-lo
 var checkRequirements = require('./check-requirements');
 var BUILD_VERSION = require('../common/version').BUILD_VERSION;
 
-/**
-* @class
-* The functions in this class are only used for load related functionality like loading the SDK itself or other external scripts.
-*/
 var InboxSDK = {
   LOADER_VERSION: BUILD_VERSION
 };
 
-/**
-* Loads the InboxSDK remotely and prepares it to be used.
-* @function
-* @param {string} version - The version of the SDK to load, the only acceptable value currently is "1.0".
-* @param {string} appId - The AppId that you registered for on the <a href="/register">AppId Registration page</a>.
-* @param {LoadOptions} opts - Options for the loading of the SDK
-* @return {Promise} A promise which resolves when the SDK is loaded and ready to be used.
-*/
 InboxSDK.load = function (version, appId, opts) {
   opts = assign({
     // defaults
@@ -4393,24 +4348,8 @@ InboxSDK.load = function (version, appId, opts) {
 
   checkRequirements(opts);
 
-  var loadPromise = PlatformImplementationLoader.load(appId, opts);
-  loadPromise['catch'](function (err) {
-    console.error("Failed to load implementation:", err, err && err.stack);
-    logError(err, {
-      type: "Failed to load implementation:"
-    }, {
-      appId: appId
-    });
-  });
-  return loadPromise;
+  return PlatformImplementationLoader.load(appId, opts);
 };
-
-/**
-* Loads a remote script into this extension's content script space and evals it
-* @function
-* @param {string} url - The URL of the remote script to load.
-* @return {Promise} a promise which resolves when this script is finished downloading and eval'ing
-*/
 
 InboxSDK.loadScript = require('../common/load-script');
 
@@ -4420,29 +4359,7 @@ if (['https://mail.google.com', 'https://inbox.google.com'].indexOf(document.loc
 
 module.exports = InboxSDK;
 
-/**
- * @class
- * This type is passed into {load} method.
- */
-var LoadOptions = /** @lends LoadOptions */{
-  /**
-   * The name of your app. This is used by several methods in the SDK.
-   * ^optional
-   * ^default=null
-   * @type {string}
-   */
-  appName: null,
-
-  /**
-   * The URL of the icon of your app. Can be HTTPS or a chrome runtime url.
-   * ^optional
-   * ^default=null
-   * @type {string}
-   */
-  appIconUrl: null
-};
-
-},{"../common/load-script":130,"../common/log-error":131,"../common/version":132,"./check-requirements":133,"./loading/platform-implementation-loader":135,"lodash/object/assign":116}],135:[function(require,module,exports){
+},{"../common/load-script":131,"../common/log-error":132,"../common/version":134,"./check-requirements":135,"./loading/platform-implementation-loader":137,"lodash/object/assign":115}],137:[function(require,module,exports){
 (function (global){
 
 //jshint ignore:start
@@ -4494,7 +4411,7 @@ module.exports = exports['default'];
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"../../common/load-script":130,"babel-runtime/core-js/promise":4,"babel-runtime/helpers/interop-require-default":9,"lodash/function/once":88,"lodash/object/assign":116}],136:[function(require,module,exports){
+},{"../../common/load-script":131,"babel-runtime/core-js/promise":4,"babel-runtime/helpers/interop-require-default":9,"lodash/function/once":88,"lodash/object/assign":115}],138:[function(require,module,exports){
 "use strict";
 
 var oldDefine;
@@ -4513,5 +4430,5 @@ try {
   }
 }
 
-},{"./inboxsdk":134}]},{},[136])
+},{"./inboxsdk":136}]},{},[138])
 
